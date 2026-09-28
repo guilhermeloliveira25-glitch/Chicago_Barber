@@ -7,7 +7,7 @@ export type BarberService = {
   name: string;
   price: number;
   duration: number;
-  image?: string;
+  image: string;
 };
 
 type ServiceCardProps = {
