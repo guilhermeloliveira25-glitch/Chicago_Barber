@@ -15,6 +15,14 @@ export default function Navbar() {
                 <li> 
                     <Link className="bg-red-600 px-4 py-2 font-bold text-white transition hover:bg-red-500" href="/booking">Agendamento</Link>
                 </li>
+               <li>
+    <Link
+        className="text-sm uppercase tracking-widest text-zinc-300 transition hover:text-red-500"
+        href="/login"
+    >
+        Login
+    </Link>
+</li>
             </ul>
         </nav>
     )
