@@ -173,7 +173,7 @@ export default function BookingPage() {
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          serviceIds: selectedServices.map((service) => service.slug),
+          serviceIds: selectedServices.map((service) => service.id),
           date: selectedDate,
           time: selectedTime,
         }),
