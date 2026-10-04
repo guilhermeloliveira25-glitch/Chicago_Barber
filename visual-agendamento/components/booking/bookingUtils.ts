@@ -112,12 +112,9 @@ export function formatDuration(totalMinutes: number): string {
 }
 
 export function formatDateLong(dateString: string): string {
-  const text = new Date(`${dateString}T00:00:00`).toLocaleDateString("pt-BR", {
+  return new Date(`${dateString}T00:00:00`).toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
-
-  // só a primeira letra maiúscula: "Quinta-feira, 15 de outubro"
-  return text.charAt(0).toUpperCase() + text.slice(1);
 }

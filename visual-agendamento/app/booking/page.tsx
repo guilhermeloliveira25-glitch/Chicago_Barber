@@ -270,7 +270,7 @@ export default function BookingPage() {
                     Agendamento selecionado
                   </p>
 
-                  <p className="mt-2 text-lg font-bold text-white">
+                  <p className="mt-2 text-lg font-bold capitalize text-white">
                     {formatDateLong(selectedDate)}{" "}
                     <span className="normal-case">às {selectedTime}</span>
                   </p>

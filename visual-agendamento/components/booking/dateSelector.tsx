@@ -83,7 +83,7 @@ export default function DateSelector({
       {selectedDate && (
         <p className="mt-3 text-zinc-300">
           Data escolhida:{" "}
-          <strong className="font-bold text-white">
+          <strong className="font-bold capitalize text-white">
             {formatDateLong(selectedDate)}
           </strong>
         </p>

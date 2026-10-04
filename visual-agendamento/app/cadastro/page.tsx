@@ -3,7 +3,6 @@
 import { FormEvent, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Permanent_Marker } from "next/font/google";
 
 const marker = Permanent_Marker({
@@ -12,23 +11,24 @@ const marker = Permanent_Marker({
   display: "swap",
 });
 
-export default function LoginPage() {
-  const router = useRouter();
-
+export default function CadastroPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+  async function handleCadastro(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setLoading(true);
     setMessage("");
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
     });
 
     setLoading(false);
@@ -38,8 +38,9 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/booking");
-    router.refresh();
+    setMessage(
+      "Cadastro realizado. Verifique seu e-mail para confirmar a conta.",
+    );
   }
 
   return (
@@ -78,6 +79,8 @@ export default function LoginPage() {
         <div className="absolute inset-x-0 bottom-0 h-[2px] bg-[#00D1FF] shadow-[0_0_24px_6px_rgba(0,209,255,0.7)]" />
       </div>
 
+    
+
       {/* ---------- Cadastro ---------- */}
       <main className="relative z-10 flex flex-1 items-center justify-center px-5 py-12 sm:py-16">
         <section className="relative w-full max-w-md">
@@ -110,15 +113,15 @@ export default function LoginPage() {
             <h1
               className={`${marker.className} mt-8 text-4xl leading-none text-white sm:text-5xl`}
             >
-              Entrar
+              Crie sua conta
             </h1>
             <div className="mt-3 h-1 w-24 -rotate-1 rounded-full bg-[#00D1FF]" />
 
             <p className="mt-5 text-zinc-400">
-              Entre na sua conta para realizar seus agendamentos.
+              Crie sua conta para realizar e acompanhar seus agendamentos.
             </p>
 
-            <form onSubmit={handleLogin} className="mt-8 space-y-5">
+            <form onSubmit={handleCadastro} className="mt-8 space-y-5">
               <div>
                 <label
                   htmlFor="email"
@@ -152,8 +155,9 @@ export default function LoginPage() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   required
+                  minLength={8}
                   className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-900/80 px-4 py-3 text-white placeholder:text-zinc-500 outline-none transition focus:border-[#FF5A00] focus:ring-2 focus:ring-[#FF5A00]/30"
-                  placeholder="Sua senha"
+                  placeholder="Mínimo de 8 caracteres"
                 />
               </div>
 
@@ -162,7 +166,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full rounded-md bg-[#FF5A00] px-6 py-4 text-base font-extrabold uppercase tracking-wide text-white shadow-[0_8px_24px_-8px_rgba(255,90,0,0.8)] transition hover:bg-[#ff6f1f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {loading ? "Entrando..." : "Entrar"}
+                {loading ? "Criando conta..." : "Criar conta"}
               </button>
             </form>
 
@@ -176,12 +180,12 @@ export default function LoginPage() {
             )}
 
             <p className="mt-7 text-center text-sm text-zinc-500">
-              Ainda não tem uma conta?{" "}
+              Já tem uma conta?{" "}
               <Link
-                href="/cadastro"
+                href="/login"
                 className="font-bold text-[#00D1FF] underline-offset-4 transition hover:text-white hover:underline"
               >
-                Criar conta
+                Entrar
               </Link>
             </p>
           </div>
