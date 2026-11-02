@@ -1,5 +1,5 @@
 /*
-  Fundo da identidade Chicago Barber: tinta laranja, textura de parede,
+  Fundo da identidade Chicago Barber: tinta vermelha, textura de parede,
   iluminação azul vinda de baixo, skyline e linha de neon.
   Uso: dentro de um container "relative overflow-hidden"; o conteúdo vai
   em outro elemento com "relative z-10".
@@ -7,9 +7,9 @@
 export default function GraffitiBackground() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0">
-      {/* respingos de tinta laranja */}
-      <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#FF5A00]/20 blur-3xl" />
-      <div className="absolute -right-20 top-1/3 h-64 w-64 rounded-full bg-[#FF5A00]/10 blur-3xl" />
+      {/* respingos de tinta vermelha */}
+      <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#DC2626]/20 blur-3xl" />
+      <div className="absolute -right-20 top-1/3 h-64 w-64 rounded-full bg-[#DC2626]/10 blur-3xl" />
 
       {/* textura sutil de parede */}
       <div

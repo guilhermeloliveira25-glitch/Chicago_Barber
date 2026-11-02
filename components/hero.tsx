@@ -35,7 +35,7 @@ export default function Hero() {
 
         <Link
           href="/booking"
-          className="w-fit rounded-md bg-[#FF5A00] px-6 py-4 text-sm font-extrabold uppercase tracking-widest text-white shadow-[0_8px_24px_-8px_rgba(255,90,0,0.8)] transition hover:bg-[#ff6f1f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF]"
+          className="w-fit rounded-md bg-[#DC2626] px-6 py-4 text-sm font-extrabold uppercase tracking-widest text-white shadow-[0_8px_24px_-8px_rgba(220,38,38,0.8)] transition hover:bg-[#EF4444] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF]"
         >
           Agende seu horário
         </Link>

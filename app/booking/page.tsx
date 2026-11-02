@@ -212,10 +212,10 @@ export default function BookingPage() {
             className="mx-auto max-w-5xl scroll-mt-6 px-6 pb-20"
           >
             <div className="relative border border-white/10 bg-zinc-950/80 p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-md sm:p-8">
-              <div className="absolute inset-x-0 top-0 h-1 bg-[#FF5A00]" />
+              <div className="absolute inset-x-0 top-0 h-1 bg-[#DC2626]" />
 
               <div>
-                <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#FF5A00]">
+                <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#EF4444]">
                   Agendamento
                 </p>
 
@@ -236,7 +236,7 @@ export default function BookingPage() {
                 </p>
 
                 <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-400">
-                  <span className="font-bold text-[#FF5A00]">
+                  <span className="font-bold text-[#EF4444]">
                     {formatPrice(totalPrice)}
                   </span>
                   <span>•</span>
@@ -265,8 +265,8 @@ export default function BookingPage() {
               )}
 
               {selectedDate && selectedTime && (
-                <div className="mt-8 border border-[#FF5A00]/40 bg-[#FF5A00]/5 p-5">
-                  <p className="text-sm font-bold uppercase tracking-widest text-[#FF5A00]">
+                <div className="mt-8 border border-[#DC2626]/40 bg-[#DC2626]/5 p-5">
+                  <p className="text-sm font-bold uppercase tracking-widest text-[#EF4444]">
                     Agendamento selecionado
                   </p>
 
@@ -283,7 +283,7 @@ export default function BookingPage() {
                   {feedback?.type === "error" && (
                     <p
                       role="alert"
-                      className="mt-4 border-l-4 border-[#FF5A00] bg-black/40 p-3 text-sm text-zinc-200"
+                      className="mt-4 border-l-4 border-[#DC2626] bg-black/40 p-3 text-sm text-zinc-200"
                     >
                       {feedback.text}
                     </p>
@@ -293,7 +293,7 @@ export default function BookingPage() {
                     type="button"
                     onClick={handleConfirm}
                     disabled={submitting}
-                    className="mt-6 w-full rounded-md bg-[#FF5A00] px-6 py-4 text-base font-extrabold uppercase tracking-wide text-white shadow-[0_8px_24px_-8px_rgba(255,90,0,0.8)] transition hover:bg-[#ff6f1f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="mt-6 w-full rounded-md bg-[#DC2626] px-6 py-4 text-base font-extrabold uppercase tracking-wide text-white shadow-[0_8px_24px_-8px_rgba(220,38,38,0.8)] transition hover:bg-[#EF4444] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {submitting ? "Agendando..." : "Confirmar agendamento"}
                   </button>
@@ -314,7 +314,7 @@ export default function BookingPage() {
                 {selectedServices.length === 1 ? "serviço" : "serviços"} ·{" "}
                 {formatDuration(totalDuration)}
               </p>
-              <p className="text-lg font-extrabold text-[#FF5A00]">
+              <p className="text-lg font-extrabold text-[#EF4444]">
                 {formatPrice(totalPrice)}
               </p>
             </div>
@@ -322,7 +322,7 @@ export default function BookingPage() {
             <button
               type="button"
               onClick={scrollToSchedule}
-              className="shrink-0 rounded-md bg-[#FF5A00] px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-white transition hover:bg-[#ff6f1f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF]"
+              className="shrink-0 rounded-md bg-[#DC2626] px-5 py-3 text-sm font-extrabold uppercase tracking-wide text-white transition hover:bg-[#EF4444] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF]"
             >
               Escolher horário
             </button>

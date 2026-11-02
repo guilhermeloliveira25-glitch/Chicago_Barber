@@ -66,6 +66,7 @@ export default function Navbar() {
     const [mobileOpen, setMobileOpen] = useState(false)
     const [profileOpen, setProfileOpen] = useState(false)
     const [signingOut, setSigningOut] = useState(false)
+    const [isAdmin, setIsAdmin] = useState(false)
     const navRef = useRef<HTMLElement>(null)
 
     useEffect(() => {
@@ -91,6 +92,22 @@ export default function Navbar() {
             listener.subscription.unsubscribe()
         }
     }, [])
+
+    // Descobre se quem está logado é admin (só serve para mostrar o atalho;
+    // a proteção de verdade está no banco).
+    useEffect(() => {
+        if (typeof userEmail !== "string") return
+
+        let active = true
+
+        supabase.rpc("is_admin").then(({ data }) => {
+            if (active) setIsAdmin(data === true)
+        })
+
+        return () => {
+            active = false
+        }
+    }, [userEmail])
 
     // fecha os menus ao clicar fora da navbar ou apertar Esc
     useEffect(() => {
@@ -132,6 +149,7 @@ export default function Navbar() {
     }
 
     const isLogged = typeof userEmail === "string"
+    const showAdmin = isLogged && isAdmin
 
     function linkClass(href: string) {
         const active = pathname === href
@@ -142,10 +160,10 @@ export default function Navbar() {
 
     const activeBar = (href: string) =>
         pathname === href ? (
-            <span aria-hidden className="absolute inset-x-2 -bottom-0.5 lg:inset-x-3 h-0.5 rounded-full bg-[#FF5A00]" />
+            <span aria-hidden className="absolute inset-x-2 -bottom-0.5 lg:inset-x-3 h-0.5 rounded-full bg-[#DC2626]" />
         ) : null
 
-    const bookingClass = `group flex items-center gap-2 rounded-md bg-[#FF5A00] px-3 py-2 text-sm font-extrabold uppercase tracking-wider text-white shadow-[0_6px_20px_-8px_rgba(255,90,0,0.9)] lg:px-4 transition hover:bg-[#ff6f1f] ${focusClass}`
+    const bookingClass = `group flex items-center gap-2 rounded-md bg-[#DC2626] px-3 py-2 text-sm font-extrabold uppercase tracking-wider text-white shadow-[0_6px_20px_-8px_rgba(220,38,38,0.9)] lg:px-4 transition hover:bg-[#EF4444] ${focusClass}`
 
     return (
         <nav
@@ -210,16 +228,26 @@ export default function Navbar() {
                                         role="menu"
                                         className="absolute right-0 top-full z-50 mt-3 w-64 border border-white/10 bg-zinc-950 p-2 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.9)]"
                                     >
-                                        <div className="absolute inset-x-0 top-0 h-0.5 bg-[#FF5A00]" />
+                                        <div className="absolute inset-x-0 top-0 h-0.5 bg-[#DC2626]" />
                                         <p className="truncate px-3 pb-2 pt-3 text-xs text-zinc-400" title={userEmail}>
                                             {userEmail}
                                         </p>
+                                        {showAdmin && (
+                                            <Link
+                                                href="/admin/services"
+                                                role="menuitem"
+                                                onClick={closeMenus}
+                                                className="block w-full rounded-md px-3 py-2 text-left text-sm font-bold uppercase tracking-wider text-[#00D1FF] transition hover:bg-white/5"
+                                            >
+                                                Gerenciar serviços
+                                            </Link>
+                                        )}
                                         <button
                                             type="button"
                                             role="menuitem"
                                             onClick={handleSignOut}
                                             disabled={signingOut}
-                                            className="w-full rounded-md px-3 py-2 text-left text-sm font-bold uppercase tracking-wider text-zinc-200 transition hover:bg-white/5 hover:text-[#FF5A00] disabled:cursor-not-allowed disabled:opacity-50"
+                                            className="w-full rounded-md px-3 py-2 text-left text-sm font-bold uppercase tracking-wider text-zinc-200 transition hover:bg-white/5 hover:text-[#EF4444] disabled:cursor-not-allowed disabled:opacity-50"
                                         >
                                             {signingOut ? "Saindo..." : "Sair"}
                                         </button>
@@ -248,7 +276,7 @@ export default function Navbar() {
                         href="/booking"
                         onClick={closeMenus}
                         aria-label="Agendamento"
-                        className={`group flex h-11 w-11 items-center justify-center rounded-md bg-[#FF5A00] shadow-[0_6px_20px_-8px_rgba(255,90,0,0.9)] ${focusClass}`}
+                        className={`group flex h-11 w-11 items-center justify-center rounded-md bg-[#DC2626] shadow-[0_6px_20px_-8px_rgba(220,38,38,0.9)] ${focusClass}`}
                     >
                         <NavIcon src="/icons/booking.png" className="h-8 w-8 object-contain" />
                     </Link>
@@ -285,7 +313,7 @@ export default function Navbar() {
                             src="/icons/menu.png"
                             className="h-8 w-8 object-contain transition duration-200 group-active:scale-90"
                             fallback={
-                                <svg aria-hidden viewBox="0 0 24 24" className="h-7 w-7 text-[#FF5A00]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                                <svg aria-hidden viewBox="0 0 24 24" className="h-7 w-7 text-[#EF4444]" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                                     <path d="M4 7h16M4 12h16M4 17h16" />
                                 </svg>
                             }
@@ -320,7 +348,7 @@ export default function Navbar() {
                         <Link
                             href="/booking"
                             onClick={closeMenus}
-                            className={`flex items-center gap-3 rounded-md bg-[#FF5A00] px-3 py-3 text-base font-extrabold uppercase tracking-wider text-white ${focusClass}`}
+                            className={`flex items-center gap-3 rounded-md bg-[#DC2626] px-3 py-3 text-base font-extrabold uppercase tracking-wider text-white ${focusClass}`}
                         >
                             <NavIcon src="/icons/booking.png" />
                             Agendamento
@@ -336,11 +364,20 @@ export default function Navbar() {
                                         {userEmail}
                                     </p>
                                 </div>
+                                {showAdmin && (
+                                    <Link
+                                        href="/admin/services"
+                                        onClick={closeMenus}
+                                        className={`mt-3 block w-full rounded-md border border-[#00D1FF]/50 px-3 py-2 text-center text-sm font-bold uppercase tracking-wider text-[#00D1FF] transition hover:bg-[#00D1FF]/10 ${focusClass}`}
+                                    >
+                                        Gerenciar serviços
+                                    </Link>
+                                )}
                                 <button
                                     type="button"
                                     onClick={handleSignOut}
                                     disabled={signingOut}
-                                    className={`mt-3 w-full rounded-md border border-zinc-700 px-3 py-2 text-sm font-bold uppercase tracking-wider text-zinc-200 transition hover:border-[#FF5A00] hover:text-[#FF5A00] disabled:cursor-not-allowed disabled:opacity-50 ${focusClass}`}
+                                    className={`mt-3 w-full rounded-md border border-zinc-700 px-3 py-2 text-sm font-bold uppercase tracking-wider text-zinc-200 transition hover:border-[#DC2626] hover:text-[#EF4444] disabled:cursor-not-allowed disabled:opacity-50 ${focusClass}`}
                                 >
                                     {signingOut ? "Saindo..." : "Sair"}
                                 </button>
@@ -359,7 +396,7 @@ export default function Navbar() {
                 </ul>
             )}
 
-            <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#FF5A00] to-transparent" />
+            <div aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-[#DC2626] to-transparent" />
         </nav>
     )
 }

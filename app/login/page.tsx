@@ -44,11 +44,11 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex flex-1 flex-col overflow-hidden bg-[#0B0B0B] text-[#F5F5F5]">
-      {/* ---------- Fundo: tinta laranja, textura e neon azul inferior ---------- */}
+      {/* ---------- Fundo: tinta vermelha, textura e neon azul inferior ---------- */}
       <div aria-hidden className="pointer-events-none absolute inset-0">
-        {/* respingos de tinta laranja */}
-        <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#FF5A00]/20 blur-3xl" />
-        <div className="absolute -right-20 top-1/3 h-64 w-64 rounded-full bg-[#FF5A00]/10 blur-3xl" />
+        {/* respingos de tinta vermelha */}
+        <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-[#DC2626]/20 blur-3xl" />
+        <div className="absolute -right-20 top-1/3 h-64 w-64 rounded-full bg-[#DC2626]/10 blur-3xl" />
 
         {/* textura sutil de parede */}
         <div
@@ -97,14 +97,14 @@ export default function LoginPage() {
           </svg>
 
           <div className="relative border border-white/10 bg-zinc-950/80 p-6 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-md sm:p-9">
-            {/* faixa laranja no topo do cartão */}
-            <div className="absolute inset-x-0 top-0 h-1 bg-[#FF5A00]" />
+            {/* faixa vermelho no topo do cartão */}
+            <div className="absolute inset-x-0 top-0 h-1 bg-[#DC2626]" />
 
             {/* pingos de tinta escorrendo da faixa */}
             <div aria-hidden className="absolute left-8 top-1 flex items-start gap-6">
-              <span className="block h-5 w-1.5 rounded-b-full bg-[#FF5A00]" />
-              <span className="block h-3 w-1.5 rounded-b-full bg-[#FF5A00]" />
-              <span className="block h-8 w-1.5 rounded-b-full bg-[#FF5A00]" />
+              <span className="block h-5 w-1.5 rounded-b-full bg-[#DC2626]" />
+              <span className="block h-3 w-1.5 rounded-b-full bg-[#DC2626]" />
+              <span className="block h-8 w-1.5 rounded-b-full bg-[#DC2626]" />
             </div>
 
             <h1
@@ -133,7 +133,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   required
-                  className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-900/80 px-4 py-3 text-white placeholder:text-zinc-500 outline-none transition focus:border-[#FF5A00] focus:ring-2 focus:ring-[#FF5A00]/30"
+                  className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-900/80 px-4 py-3 text-white placeholder:text-zinc-500 outline-none transition focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/30"
                   placeholder="seu@email.com"
                 />
               </div>
@@ -152,7 +152,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   required
-                  className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-900/80 px-4 py-3 text-white placeholder:text-zinc-500 outline-none transition focus:border-[#FF5A00] focus:ring-2 focus:ring-[#FF5A00]/30"
+                  className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-900/80 px-4 py-3 text-white placeholder:text-zinc-500 outline-none transition focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/30"
                   placeholder="Sua senha"
                 />
               </div>
@@ -160,7 +160,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-md bg-[#FF5A00] px-6 py-4 text-base font-extrabold uppercase tracking-wide text-white shadow-[0_8px_24px_-8px_rgba(255,90,0,0.8)] transition hover:bg-[#ff6f1f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF] disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-md bg-[#DC2626] px-6 py-4 text-base font-extrabold uppercase tracking-wide text-white shadow-[0_8px_24px_-8px_rgba(220,38,38,0.8)] transition hover:bg-[#EF4444] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? "Entrando..." : "Entrar"}
               </button>

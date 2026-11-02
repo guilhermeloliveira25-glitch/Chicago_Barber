@@ -63,7 +63,7 @@ export default function DateSelector({
         onChange={(event) => handleDateChange(event.target.value)}
         min={todayString}
         max={maxDateString}
-        className="mt-3 w-full rounded-md border border-zinc-700 bg-zinc-900/80 px-4 py-3 text-white outline-none transition [color-scheme:dark] focus:border-[#FF5A00] focus:ring-2 focus:ring-[#FF5A00]/30 sm:max-w-sm"
+        className="mt-3 w-full rounded-md border border-zinc-700 bg-zinc-900/80 px-4 py-3 text-white outline-none transition [color-scheme:dark] focus:border-[#DC2626] focus:ring-2 focus:ring-[#DC2626]/30 sm:max-w-sm"
       />
 
       <p className="mt-2 text-sm text-zinc-500">
@@ -74,7 +74,7 @@ export default function DateSelector({
       {notice && (
         <p
           role="status"
-          className="mt-3 border-l-4 border-[#FF5A00] bg-black/40 p-3 text-sm text-zinc-200"
+          className="mt-3 border-l-4 border-[#DC2626] bg-black/40 p-3 text-sm text-zinc-200"
         >
           {notice}
         </p>

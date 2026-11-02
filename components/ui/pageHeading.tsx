@@ -13,7 +13,7 @@ export default function PageHeading({
 }: PageHeadingProps) {
   return (
     <header>
-      <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#FF5A00]">
+      <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#EF4444]">
         {eyebrow}
       </p>
 

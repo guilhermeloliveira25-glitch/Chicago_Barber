@@ -39,7 +39,7 @@ export default function Contact() {
 
       <main className="relative z-10 flex flex-1 items-center justify-center px-6 py-16">
         <div className="relative w-full max-w-md border border-white/10 bg-zinc-950/80 p-8 text-center shadow-[0_20px_60px_-20px_rgba(0,0,0,0.9)] backdrop-blur-md sm:p-10">
-          <div className="absolute inset-x-0 top-0 h-1 bg-[#FF5A00]" />
+          <div className="absolute inset-x-0 top-0 h-1 bg-[#DC2626]" />
 
           <h1
             className={`${marker.className} text-4xl leading-none text-white sm:text-5xl`}
@@ -56,7 +56,7 @@ export default function Contact() {
             href={INSTAGRAM_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-8 inline-flex items-center justify-center gap-3 rounded-md bg-[#FF5A00] px-8 py-4 text-base font-extrabold uppercase tracking-wide text-white shadow-[0_8px_24px_-8px_rgba(255,90,0,0.8)] transition hover:bg-[#ff6f1f] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF]"
+            className="mt-8 inline-flex items-center justify-center gap-3 rounded-md bg-[#DC2626] px-8 py-4 text-base font-extrabold uppercase tracking-wide text-white shadow-[0_8px_24px_-8px_rgba(220,38,38,0.8)] transition hover:bg-[#EF4444] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF]"
           >
             <svg
               aria-hidden

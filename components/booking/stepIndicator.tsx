@@ -26,7 +26,7 @@ export default function StepIndicator({ current }: StepIndicatorProps) {
                 done
                   ? "border-[#00D1FF] bg-[#00D1FF]/15 text-[#00D1FF]"
                   : active
-                    ? "border-[#FF5A00] bg-[#FF5A00] text-white"
+                    ? "border-[#DC2626] bg-[#DC2626] text-white"
                     : "border-zinc-700 text-zinc-500"
               }`}
             >
