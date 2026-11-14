@@ -187,17 +187,6 @@ export default function LoginPage() {
           </div>
         </section>
       </main>
-
-      {/* ---------- Footer ---------- */}
-      <footer className="relative z-10 px-5 pb-6 pt-4 text-center">
-        <p className={`${marker.className} text-lg text-[#00D1FF]`}>
-          Cuide do seu estilo
-        </p>
-        <p className="mt-1 text-xs text-zinc-400">
-          Chicago Barber © {new Date().getFullYear()}. Todos os direitos
-          reservados.
-        </p>
-      </footer>
     </div>
   );
 }

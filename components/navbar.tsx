@@ -11,7 +11,6 @@ import { supabase } from "@/lib/supabase"
   /public/logo.png
   /public/icons/home.png
   /public/icons/services.png
-  /public/icons/contact.png
   /public/icons/booking.png
   /public/icons/user.png   (login e perfil usam o mesmo ícone)
   /public/icons/menu.png   (botão do menu no celular)
@@ -20,7 +19,6 @@ import { supabase } from "@/lib/supabase"
 const NAV_LINKS = [
     { href: "/", label: "Home", icon: "/icons/home.png" },
     { href: "/services", label: "Serviços", icon: "/icons/services.png" },
-    { href: "/contact", label: "Contato", icon: "/icons/contact.png" },
 ]
 
 const iconClass =
@@ -234,16 +232,6 @@ export default function Navbar() {
                                         </p>
                                         {showAdmin && (
                                             <Link
-                                                href="/admin/agenda"
-                                                role="menuitem"
-                                                onClick={closeMenus}
-                                                className="block w-full rounded-md px-3 py-2 text-left text-sm font-bold uppercase tracking-wider text-[#EF4444] transition hover:bg-white/5"
-                                            >
-                                                Gerenciar agenda
-                                            </Link>
-                                        )}
-                                        {showAdmin && (
-                                            <Link
                                                 href="/admin/services"
                                                 role="menuitem"
                                                 onClick={closeMenus}
@@ -374,15 +362,6 @@ export default function Navbar() {
                                         {userEmail}
                                     </p>
                                 </div>
-                                {showAdmin && (
-                                    <Link
-                                        href="/admin/agenda"
-                                        onClick={closeMenus}
-                                        className={`mt-3 block w-full rounded-md border border-[#DC2626]/50 px-3 py-2 text-center text-sm font-bold uppercase tracking-wider text-[#EF4444] transition hover:bg-[#DC2626]/10 ${focusClass}`}
-                                    >
-                                        Gerenciar agenda
-                                    </Link>
-                                )}
                                 {showAdmin && (
                                     <Link
                                         href="/admin/services"
