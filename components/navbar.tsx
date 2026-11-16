@@ -21,6 +21,12 @@ const NAV_LINKS = [
     { href: "/services", label: "Serviços", icon: "/icons/services.png" },
 ]
 
+// Atalhos que só o admin enxerga. Se a sua tela de agenda tiver outro endereço, troque só o href dela.
+const ADMIN_LINKS = [
+    { href: "/admin/agenda", label: "Gerenciar agenda" },
+    { href: "/admin/services", label: "Gerenciar serviços" },
+]
+
 const iconClass =
     "h-8 w-8 object-contain transition duration-200 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(0,209,255,0.6)]"
 
@@ -230,16 +236,18 @@ export default function Navbar() {
                                         <p className="truncate px-3 pb-2 pt-3 text-xs text-zinc-400" title={userEmail}>
                                             {userEmail}
                                         </p>
-                                        {showAdmin && (
-                                            <Link
-                                                href="/admin/services"
-                                                role="menuitem"
-                                                onClick={closeMenus}
-                                                className="block w-full rounded-md px-3 py-2 text-left text-sm font-bold uppercase tracking-wider text-[#00D1FF] transition hover:bg-white/5"
-                                            >
-                                                Gerenciar serviços
-                                            </Link>
-                                        )}
+                                        {showAdmin &&
+                                            ADMIN_LINKS.map((item) => (
+                                                <Link
+                                                    key={item.href}
+                                                    href={item.href}
+                                                    role="menuitem"
+                                                    onClick={closeMenus}
+                                                    className="block w-full rounded-md px-3 py-2 text-left text-sm font-bold uppercase tracking-wider text-[#00D1FF] transition hover:bg-white/5"
+                                                >
+                                                    {item.label}
+                                                </Link>
+                                            ))}
                                         <button
                                             type="button"
                                             role="menuitem"
@@ -362,15 +370,17 @@ export default function Navbar() {
                                         {userEmail}
                                     </p>
                                 </div>
-                                {showAdmin && (
-                                    <Link
-                                        href="/admin/services"
-                                        onClick={closeMenus}
-                                        className={`mt-3 block w-full rounded-md border border-[#00D1FF]/50 px-3 py-2 text-center text-sm font-bold uppercase tracking-wider text-[#00D1FF] transition hover:bg-[#00D1FF]/10 ${focusClass}`}
-                                    >
-                                        Gerenciar serviços
-                                    </Link>
-                                )}
+                                {showAdmin &&
+                                    ADMIN_LINKS.map((item) => (
+                                        <Link
+                                            key={item.href}
+                                            href={item.href}
+                                            onClick={closeMenus}
+                                            className={`mt-3 block w-full rounded-md border border-[#00D1FF]/50 px-3 py-2 text-center text-sm font-bold uppercase tracking-wider text-[#00D1FF] transition hover:bg-[#00D1FF]/10 ${focusClass}`}
+                                        >
+                                            {item.label}
+                                        </Link>
+                                    ))}
                                 <button
                                     type="button"
                                     onClick={handleSignOut}

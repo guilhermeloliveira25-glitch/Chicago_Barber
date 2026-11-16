@@ -2,18 +2,20 @@ import { OPENING_TIME, CLOSING_TIME, formatTime } from "@/components/booking/boo
 
 /*
   Dados da barbearia usados no rodapé e na seção "Onde estamos".
-  ATENÇÃO: troque os valores marcados com "TROCAR" pelos dados reais.
   Deixe "" (vazio) o que a barbearia não tiver: o botão/ícone correspondente some sozinho.
 */
 export const SITE = {
   name: "Chicago Barber",
 
-  // TROCAR: endereço real da barbearia
   address: {
-    street: "Rua Exemplo, 123",
-    district: "Bairro",
-    city: "Cidade/UF",
+    street: "R. João Carlos Zanaroli, 86",
+    district: "Jardim Angelica",
+    city: "Guarulhos - SP",
+    zip: "07260-490",
   },
+
+  // Link do Google Maps usado no botão "Como chegar"
+  mapsUrl: "https://share.google/qvU5kILEKyJJQnymC",
 
   // Só números, com DDD (ex.: "11999999999")
   phone: "",
@@ -26,19 +28,23 @@ export const SITE = {
 
   // Foto da barbearia (coloque o arquivo em /public/images/).
   // Enquanto o arquivo não existir, aparece um painel gráfico no lugar.
-  shopImage: "/images/barbearia.jpg",
+  shopImage: "/images/barbearia.webp",
 
   // Dias e horário de atendimento (vem da mesma configuração do agendamento)
   hours: `Segunda a sábado, das ${formatTime(OPENING_TIME)} às ${formatTime(CLOSING_TIME)}`,
 };
 
 export function addressLine(): string {
-  const { street, district, city } = SITE.address;
-  return [street, district, city].filter(Boolean).join(" – ");
+  const { street, district, city, zip } = SITE.address;
+  return `${street} - ${district}, ${city}, ${zip}`;
 }
 
+// Usa o link do Maps informado; se estiver vazio, monta uma busca pelo endereço.
 export function mapsLink(): string {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressLine())}`;
+  return (
+    SITE.mapsUrl ||
+    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addressLine())}`
+  );
 }
 
 export function instagramHandle(): string {

@@ -6,15 +6,18 @@ import ServiceSelector from "@/components/services/serviceSelector";
 import DateSelector from "@/components/booking/dateSelector";
 import TimeSelector from "@/components/booking/timeSelector";
 import StepIndicator from "@/components/booking/stepIndicator";
+import ContactForm, { type ClientDetails } from "@/components/booking/contactForm";
 import GraffitiBackground from "@/components/ui/graffitiBackground";
 import {
   getAvailableTimes,
+  getTodayString,
   formatPrice,
   formatDuration,
   formatDateLong,
 } from "@/components/booking/bookingUtils";
 import type { BarberService } from "@/components/services/serviceCard";
 import { supabase } from "@/lib/supabase";
+import { formatPhone, timeToMinutes } from "@/lib/agenda";
 
 type Feedback = { type: "success" | "error"; text: string } | null;
 
@@ -34,6 +37,18 @@ export default function BookingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [feedback, setFeedback] = useState<Feedback>(null);
 
+  // Contato do cliente (undefined = ainda carregando | null = não preenchido)
+  const [contact, setContact] = useState<ClientDetails | null | undefined>(
+    undefined,
+  );
+  const [editingContact, setEditingContact] = useState(false);
+
+  // Horários já ocupados no dia escolhido
+  const [busy, setBusy] = useState<{
+    date: string;
+    slots: { start: string; end: string }[];
+  }>({ date: "", slots: [] });
+
   useEffect(() => {
     async function checkUser() {
       const {
@@ -51,6 +66,52 @@ export default function BookingPage() {
 
     checkUser();
   }, [router]);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    let active = true;
+
+    supabase
+      .from("client_details")
+      .select("full_name, phone")
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!active) return;
+        setContact(
+          data ? { full_name: data.full_name, phone: data.phone } : null,
+        );
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  useEffect(() => {
+    if (!selectedDate) return;
+
+    let active = true;
+
+    supabase.rpc("get_busy_slots", { p_date: selectedDate }).then(({ data, error }) => {
+      if (!active) return;
+
+      const rows = (error || !data ? [] : data) as {
+        starts_at: string;
+        ends_at: string;
+      }[];
+
+      setBusy({
+        date: selectedDate,
+        slots: rows.map((row) => ({ start: row.starts_at, end: row.ends_at })),
+      });
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [selectedDate]);
 
   const totalDuration = useMemo(
     () =>
@@ -70,10 +131,34 @@ export default function BookingPage() {
     [selectedServices],
   );
 
-  const availableTimes = useMemo(
-    () => getAvailableTimes(selectedDate, totalDuration),
-    [selectedDate, totalDuration],
-  );
+  // Horários do expediente; hoje, os que já passaram não aparecem
+  const availableTimes = useMemo(() => {
+    const times = getAvailableTimes(selectedDate, totalDuration);
+
+    if (selectedDate !== getTodayString()) {
+      return times;
+    }
+
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    return times.filter((time) => timeToMinutes(time) > nowMinutes);
+  }, [selectedDate, totalDuration]);
+
+  // Horários que batem com algum agendamento que já existe
+  const unavailableTimes = useMemo(() => {
+    if (busy.date !== selectedDate) return [];
+
+    return availableTimes.filter((time) => {
+      const start = timeToMinutes(time);
+      const end = start + totalDuration;
+
+      return busy.slots.some(
+        (slot) =>
+          start < timeToMinutes(slot.end) && end > timeToMinutes(slot.start),
+      );
+    });
+  }, [availableTimes, busy, selectedDate, totalDuration]);
 
   // Etapa atual do fluxo (só visual)
   const currentStep: 1 | 2 | 3 | 4 =
@@ -244,6 +329,33 @@ export default function BookingPage() {
                 </div>
               </div>
 
+              {contact === undefined ? null : contact && !editingContact ? (
+                <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border border-white/10 bg-black/30 p-4">
+                  <p className="text-sm text-zinc-300">
+                    <span className="font-bold text-white">{contact.full_name}</span>
+                    {" · "}
+                    {formatPhone(contact.phone)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setEditingContact(true)}
+                    className="text-xs font-bold uppercase tracking-wider text-zinc-400 transition hover:text-[#00D1FF]"
+                  >
+                    Alterar contato
+                  </button>
+                </div>
+              ) : (
+                <ContactForm
+                  userId={userId}
+                  initial={contact ?? null}
+                  onSaved={(details) => {
+                    setContact(details);
+                    setEditingContact(false);
+                  }}
+                  onCancel={contact ? () => setEditingContact(false) : undefined}
+                />
+              )}
+
               <DateSelector
                 selectedDate={selectedDate}
                 onChange={(date) => {
@@ -257,6 +369,7 @@ export default function BookingPage() {
                 <TimeSelector
                   selectedTime={selectedTime}
                   availableTimes={availableTimes}
+                  unavailableTimes={unavailableTimes}
                   onChange={(time) => {
                     setSelectedTime(time);
                     setFeedback(null);
@@ -292,7 +405,7 @@ export default function BookingPage() {
                   <button
                     type="button"
                     onClick={handleConfirm}
-                    disabled={submitting}
+                    disabled={submitting || !contact || editingContact}
                     className="mt-6 w-full rounded-md bg-[#DC2626] px-6 py-4 text-base font-extrabold uppercase tracking-wide text-white shadow-[0_8px_24px_-8px_rgba(220,38,38,0.8)] transition hover:bg-[#EF4444] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#00D1FF] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {submitting ? "Agendando..." : "Confirmar agendamento"}

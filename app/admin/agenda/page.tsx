@@ -1,10 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import GraffitiBackground from "@/components/ui/graffitiBackground";
 import PageHeading from "@/components/ui/pageHeading";
+import TimeSelector from "@/components/booking/timeSelector";
+import {
+  OPENING_TIME,
+  CLOSING_TIME,
+  SLOT_INTERVAL,
+  formatTime as formatMinutes,
+} from "@/components/booking/bookingUtils";
+import {
+  formatPhone,
+  mailtoLink,
+  messageAbout,
+  messageCancelled,
+  messageRescheduled,
+  timeToMinutes,
+  whatsappLink,
+} from "@/lib/agenda";
 
 type AppointmentService = {
   id: string;
@@ -18,6 +34,7 @@ type Appointment = {
   user_id: string;
   customer_email: string;
   customer_name: string;
+  customer_phone: string | null;
   appointment_date: string;
   start_time: string;
   end_time: string;
@@ -27,7 +44,57 @@ type Appointment = {
   services: AppointmentService[];
 };
 
-type Notice = { type: "success" | "error"; text: string } | null;
+type Notice = {
+  type: "success" | "error";
+  text: string;
+  notify?: { label: string; href: string };
+} | null;
+
+// Busca os agendamentos de um intervalo (usada pela semana e pela remarcação)
+async function fetchRange(start: string, end: string): Promise<Appointment[]> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    throw new Error("NO_SESSION");
+  }
+
+  const response = await fetch(
+    `/api/admin/appointments?start=${start}&end=${end}`,
+    { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" },
+  );
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(result.error || "Não foi possível carregar a agenda.");
+  }
+
+  return result.appointments ?? [];
+}
+
+// Link para avisar o cliente: WhatsApp se tiver telefone; senão, e-mail
+function notifyLink(
+  appointment: Appointment,
+  message: string,
+  subject: string,
+): { label: string; href: string } | undefined {
+  if (appointment.customer_phone) {
+    return {
+      label: "Avisar no WhatsApp",
+      href: whatsappLink(appointment.customer_phone, message),
+    };
+  }
+
+  if (appointment.customer_email && appointment.customer_email.includes("@")) {
+    return {
+      label: "Avisar por e-mail",
+      href: mailtoLink(appointment.customer_email, subject, message),
+    };
+  }
+
+  return undefined;
+}
 
 const buttonClass =
   "rounded-md border border-zinc-700 px-3 py-2 text-xs font-bold uppercase tracking-wider text-zinc-300 transition hover:border-[#00D1FF] hover:text-[#00D1FF] disabled:cursor-not-allowed disabled:opacity-40";
@@ -103,46 +170,26 @@ export default function AdminAgendaPage() {
   const [editing, setEditing] = useState<Appointment | null>(null);
   const [editDate, setEditDate] = useState("");
   const [editTime, setEditTime] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+  const [cancelling, setCancelling] = useState<Appointment | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [dayBusy, setDayBusy] = useState<{ date: string; list: Appointment[] } | null>(null);
 
   const weekDates = useMemo(() => {
     const first = startOfWeek(selectedDate);
     return Array.from({ length: 7 }, (_, index) => addDays(first, index));
   }, [selectedDate]);
 
-  const loadAppointments = useCallback(async () => {
+  function changeDate(value: string) {
+    if (!value) return;
     setLoading(true);
-    setLoadError("");
+    setSelectedDate(value);
+  }
 
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        router.replace("/login");
-        return;
-      }
-
-      const start = startOfWeek(selectedDate);
-      const end = addDays(start, 6);
-      const response = await fetch(
-        `/api/admin/appointments?start=${start}&end=${end}`,
-        { headers: { Authorization: `Bearer ${session.access_token}` }, cache: "no-store" },
-      );
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Não foi possível carregar a agenda.");
-      }
-
-      setAppointments(result.appointments ?? []);
-    } catch (error) {
-      console.error(error);
-      setLoadError(error instanceof Error ? error.message : "Erro ao carregar a agenda.");
-    } finally {
-      setLoading(false);
-    }
-  }, [router, selectedDate]);
+  function refresh() {
+    setLoading(true);
+    setReloadKey((key) => key + 1);
+  }
 
   useEffect(() => {
     let active = true;
@@ -174,9 +221,90 @@ export default function AdminAgendaPage() {
     };
   }, [router]);
 
+  // Carrega a semana (e recarrega quando a data da semana muda ou após uma ação)
   useEffect(() => {
-    if (allowed) void loadAppointments();
-  }, [allowed, loadAppointments]);
+    if (!allowed) return;
+
+    let active = true;
+    const start = startOfWeek(selectedDate);
+
+    fetchRange(start, addDays(start, 6))
+      .then((list) => {
+        if (!active) return;
+        setAppointments(list);
+        setLoadError("");
+        setLoading(false);
+      })
+      .catch((error) => {
+        if (!active) return;
+
+        if (error instanceof Error && error.message === "NO_SESSION") {
+          router.replace("/login");
+          return;
+        }
+
+        console.error(error);
+        setLoadError(error instanceof Error ? error.message : "Erro ao carregar a agenda.");
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [allowed, selectedDate, reloadKey, router]);
+
+  // Ao remarcar: carrega o dia escolhido para saber quais horários estão livres
+  useEffect(() => {
+    if (!editing || !editDate) return;
+
+    let active = true;
+
+    fetchRange(editDate, editDate)
+      .then((list) => {
+        if (active) setDayBusy({ date: editDate, list });
+      })
+      .catch(() => {
+        if (active) setDayBusy({ date: editDate, list: [] });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [editing, editDate]);
+
+  // Horários livres para a remarcação (mesma duração, sem bater em outro corte)
+  const freeTimes = useMemo(() => {
+    if (!editing || !editDate || dayBusy?.date !== editDate) return [];
+
+    const day = dateFromString(editDate);
+    if (day.getDay() === 0) return [];
+
+    const duration = Number(editing.total_duration);
+    const others = dayBusy.list.filter(
+      (item) => item.id !== editing.id && item.status !== "cancelled",
+    );
+
+    const now = new Date();
+    const isToday = editDate === localDateString(now);
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const times: string[] = [];
+
+    for (let start = OPENING_TIME; start + duration <= CLOSING_TIME; start += SLOT_INTERVAL) {
+      if (isToday && start <= nowMinutes) continue;
+
+      const end = start + duration;
+      const clash = others.some(
+        (item) =>
+          start < timeToMinutes(formatTime(item.end_time)) &&
+          end > timeToMinutes(formatTime(item.start_time)),
+      );
+
+      if (!clash) times.push(formatMinutes(start));
+    }
+
+    return times;
+  }, [editing, editDate, dayBusy]);
 
   const dayAppointments = useMemo(
     () =>
@@ -193,6 +321,7 @@ export default function AdminAgendaPage() {
   async function updateAppointment(
     appointment: Appointment,
     changes: { date?: string; time?: string; status?: "confirmed" | "cancelled" | "completed" },
+    reason = "",
   ) {
     setBusyId(appointment.id);
     setNotice(null);
@@ -219,12 +348,38 @@ export default function AdminAgendaPage() {
 
       if (!response.ok) throw new Error(result.error || "Não foi possível atualizar o agendamento.");
 
-      setNotice({
-        type: "success",
-        text: changes.status === "cancelled" ? "Agendamento cancelado." : "Agendamento atualizado.",
-      });
+      const booking = {
+        name: appointment.customer_name,
+        date: appointment.appointment_date,
+        time: formatTime(appointment.start_time),
+      };
+
+      if (changes.status === "cancelled") {
+        setNotice({
+          type: "success",
+          text: "Agendamento cancelado.",
+          notify: notifyLink(appointment, messageCancelled(booking, reason), "Seu horário na Chicago Barber"),
+        });
+      } else if (changes.date && changes.time) {
+        setNotice({
+          type: "success",
+          text: "Agendamento remarcado.",
+          notify: notifyLink(
+            appointment,
+            messageRescheduled({ name: appointment.customer_name }, changes.date, changes.time),
+            "Seu horário na Chicago Barber",
+          ),
+        });
+      } else if (changes.status === "completed") {
+        setNotice({ type: "success", text: "Atendimento marcado como concluído." });
+      } else {
+        setNotice({ type: "success", text: "Agendamento atualizado." });
+      }
+
       setEditing(null);
-      await loadAppointments();
+      setCancelling(null);
+      setCancelReason("");
+      refresh();
     } catch (error) {
       setNotice({
         type: "error",
@@ -272,6 +427,16 @@ export default function AdminAgendaPage() {
               }`}
             >
               {notice.text}
+              {notice.notify && (
+                <a
+                  href={notice.notify.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 block w-fit rounded-md bg-[#DC2626] px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-white transition hover:bg-[#EF4444]"
+                >
+                  {notice.notify.label}
+                </a>
+              )}
             </p>
           )}
 
@@ -281,9 +446,9 @@ export default function AdminAgendaPage() {
               <p className="mt-1 text-lg font-extrabold capitalize text-white">{formatLongDate(selectedDate)}</p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <button type="button" className={buttonClass} onClick={() => setSelectedDate(addDays(selectedDate, -7))}>← Semana anterior</button>
-              <button type="button" className={buttonClass} onClick={() => setSelectedDate(localDateString(new Date()))}>Hoje</button>
-              <button type="button" className={buttonClass} onClick={() => setSelectedDate(addDays(selectedDate, 7))}>Próxima semana →</button>
+              <button type="button" className={buttonClass} onClick={() => changeDate(addDays(selectedDate, -7))}>← Semana anterior</button>
+              <button type="button" className={buttonClass} onClick={() => changeDate(localDateString(new Date()))}>Hoje</button>
+              <button type="button" className={buttonClass} onClick={() => changeDate(addDays(selectedDate, 7))}>Próxima semana →</button>
             </div>
           </div>
 
@@ -295,7 +460,7 @@ export default function AdminAgendaPage() {
                 <button
                   key={date}
                   type="button"
-                  onClick={() => setSelectedDate(date)}
+                  onClick={() => changeDate(date)}
                   className={`rounded-lg border p-3 text-left transition sm:p-4 ${
                     selected
                       ? "border-[#DC2626] bg-[#DC2626]/10 shadow-[0_8px_24px_-12px_rgba(220,38,38,0.8)]"
@@ -336,10 +501,10 @@ export default function AdminAgendaPage() {
                 id="agenda-date"
                 type="date"
                 value={selectedDate}
-                onChange={(event) => setSelectedDate(event.target.value)}
+                onChange={(event) => changeDate(event.target.value)}
                 className="rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-white outline-none focus:border-[#00D1FF]"
               />
-              <button type="button" onClick={() => void loadAppointments()} className={buttonClass}>Atualizar</button>
+              <button type="button" onClick={refresh} className={buttonClass}>Atualizar</button>
             </div>
           </div>
 
@@ -347,7 +512,7 @@ export default function AdminAgendaPage() {
           {loadError && (
             <div role="alert" className="mt-6 border-l-4 border-[#DC2626] bg-black/50 p-4 text-sm text-zinc-200">
               {loadError}
-              <p className="mt-2 text-xs text-zinc-400">Se a função de agenda ainda não existe no banco, execute a migração SQL enviada junto com estes arquivos.</p>
+              <p className="mt-2 text-xs text-zinc-400">Se a mensagem falar de função do banco, confira se as migrações de SQL da pasta supabase/migrations foram executadas.</p>
             </div>
           )}
 
@@ -374,7 +539,10 @@ export default function AdminAgendaPage() {
 
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate text-base font-extrabold uppercase tracking-wide text-white">{appointment.customer_name}</h3>
-                      <p className="mt-1 break-all text-xs text-zinc-500">{appointment.customer_email}</p>
+                      <p className="mt-1 break-all text-xs text-zinc-500">
+                        {appointment.customer_phone ? `${formatPhone(appointment.customer_phone)} · ` : ""}
+                        {appointment.customer_email}
+                      </p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         {appointment.services.map((service) => (
                           <span key={service.id} className="rounded border border-white/10 bg-white/[0.03] px-2 py-1 text-xs text-zinc-300">{service.name}</span>
@@ -383,17 +551,64 @@ export default function AdminAgendaPage() {
                       <p className="mt-3 text-xs text-zinc-500">{appointment.total_duration} min <span className="px-1 text-zinc-700">·</span> <strong className="text-[#00D1FF]">{formatCurrency(appointment.total_price)}</strong></p>
                     </div>
 
+                    <div className="flex flex-wrap gap-2 sm:max-w-[15rem] sm:justify-end">
+                      {appointment.customer_phone && (
+                        <>
+                          <a
+                            className={buttonClass}
+                            href={whatsappLink(
+                              appointment.customer_phone,
+                              messageAbout({
+                                name: appointment.customer_name,
+                                date: appointment.appointment_date,
+                                time: formatTime(appointment.start_time),
+                              }),
+                            )}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            WhatsApp
+                          </a>
+                          <a className={buttonClass} href={`tel:+55${appointment.customer_phone}`}>Ligar</a>
+                        </>
+                      )}
+                      {appointment.customer_email.includes("@") && (
+                        <a
+                          className={buttonClass}
+                          href={mailtoLink(
+                            appointment.customer_email,
+                            "Seu horário na Chicago Barber",
+                            messageAbout({
+                              name: appointment.customer_name,
+                              date: appointment.appointment_date,
+                              time: formatTime(appointment.start_time),
+                            }),
+                          )}
+                        >
+                          E-mail
+                        </a>
+                      )}
+                    </div>
+
                     {!cancelled && appointment.status !== "completed" && (
                       <div className="flex flex-wrap gap-2 sm:justify-end">
+                        <button
+                          type="button"
+                          className={buttonClass}
+                          disabled={busyId === appointment.id}
+                          onClick={() => void updateAppointment(appointment, { status: "completed" })}
+                        >
+                          Concluir
+                        </button>
                         <button type="button" className={buttonClass} onClick={() => openReschedule(appointment)}>Remarcar</button>
                         <button
                           type="button"
                           className="rounded-md border border-[#DC2626]/60 px-3 py-2 text-xs font-bold uppercase tracking-wider text-[#EF4444] transition hover:bg-[#DC2626]/10 disabled:opacity-40"
                           disabled={busyId === appointment.id}
                           onClick={() => {
-                            if (window.confirm(`Cancelar o corte de ${appointment.customer_name} às ${formatTime(appointment.start_time)}?`)) {
-                              void updateAppointment(appointment, { status: "cancelled" });
-                            }
+                            setNotice(null);
+                            setCancelReason("");
+                            setCancelling(appointment);
                           }}
                         >
                           {busyId === appointment.id ? "Salvando..." : "Cancelar"}
@@ -408,19 +623,25 @@ export default function AdminAgendaPage() {
 
           {editing && (
             <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEditing(null); }}>
-              <section role="dialog" aria-modal="true" aria-labelledby="reschedule-title" className="w-full max-w-md border border-white/10 bg-[#111111] p-5 shadow-2xl sm:p-6">
+              <section role="dialog" aria-modal="true" aria-labelledby="reschedule-title" className="max-h-[92vh] w-full max-w-lg overflow-y-auto border border-white/10 bg-[#111111] p-5 shadow-2xl sm:p-6">
                 <div className="mb-5 h-1 w-full bg-[#DC2626]" />
                 <h2 id="reschedule-title" className="text-lg font-black uppercase tracking-wide text-white">Remarcar corte</h2>
                 <p className="mt-1 text-sm text-zinc-400">{editing.customer_name} · {formatTime(editing.start_time)}</p>
-                <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Nova data
-                    <input type="date" value={editDate} onChange={(event) => setEditDate(event.target.value)} className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm text-white outline-none focus:border-[#00D1FF]" />
-                  </label>
-                  <label className="text-xs font-bold uppercase tracking-wider text-zinc-400">Novo horário
-                    <input type="time" value={editTime} onChange={(event) => setEditTime(event.target.value)} className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm text-white outline-none focus:border-[#00D1FF]" />
-                  </label>
-                </div>
-                <p className="mt-3 text-xs text-zinc-500">A alteração só será salva se o horário estiver dentro do funcionamento e não houver conflito com outro corte.</p>
+                <label className="mt-5 block text-xs font-bold uppercase tracking-wider text-zinc-400">Nova data
+                  <input type="date" value={editDate} onChange={(event) => { setEditDate(event.target.value); setEditTime(""); }} className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm text-white outline-none [color-scheme:dark] focus:border-[#00D1FF]" />
+                </label>
+
+                {editDate && dayBusy?.date !== editDate && (
+                  <p className="mt-4 text-sm text-zinc-400">Carregando horários...</p>
+                )}
+                {editDate && dayBusy?.date === editDate && (
+                  <TimeSelector
+                    selectedTime={editTime}
+                    availableTimes={freeTimes}
+                    onChange={setEditTime}
+                  />
+                )}
+                <p className="mt-3 text-xs text-zinc-500">Só aparecem horários livres, dentro do funcionamento. Depois de salvar, você poderá avisar o cliente.</p>
                 <div className="mt-6 flex flex-wrap justify-end gap-2">
                   <button type="button" className={buttonClass} onClick={() => setEditing(null)}>Voltar</button>
                   <button
@@ -430,6 +651,39 @@ export default function AdminAgendaPage() {
                     className="rounded-md bg-[#DC2626] px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-white transition hover:bg-[#EF4444] disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     {busyId === editing.id ? "Salvando..." : "Salvar remarcação"}
+                  </button>
+                </div>
+              </section>
+            </div>
+          )}
+
+          {cancelling && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCancelling(null); }}>
+              <section role="dialog" aria-modal="true" aria-labelledby="cancel-title" className="w-full max-w-md border border-white/10 bg-[#111111] p-5 shadow-2xl sm:p-6">
+                <div className="mb-5 h-1 w-full bg-[#DC2626]" />
+                <h2 id="cancel-title" className="text-lg font-black uppercase tracking-wide text-white">Desmarcar corte</h2>
+                <p className="mt-1 text-sm text-zinc-400">
+                  {cancelling.customer_name} · {formatShortDate(cancelling.appointment_date)} às {formatTime(cancelling.start_time)}
+                </p>
+                <label className="mt-5 block text-xs font-bold uppercase tracking-wider text-zinc-400">Motivo (opcional)
+                  <textarea
+                    value={cancelReason}
+                    onChange={(event) => setCancelReason(event.target.value)}
+                    rows={3}
+                    maxLength={200}
+                    placeholder="Aparece na mensagem de aviso ao cliente"
+                    className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-3 text-sm normal-case tracking-normal text-white outline-none placeholder:text-zinc-600 focus:border-[#00D1FF]"
+                  />
+                </label>
+                <div className="mt-6 flex flex-wrap justify-end gap-2">
+                  <button type="button" className={buttonClass} onClick={() => setCancelling(null)}>Voltar</button>
+                  <button
+                    type="button"
+                    disabled={busyId === cancelling.id}
+                    onClick={() => void updateAppointment(cancelling, { status: "cancelled" }, cancelReason)}
+                    className="rounded-md bg-[#DC2626] px-4 py-2 text-xs font-extrabold uppercase tracking-wider text-white transition hover:bg-[#EF4444] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {busyId === cancelling.id ? "Salvando..." : "Desmarcar"}
                   </button>
                 </div>
               </section>

@@ -58,7 +58,7 @@ export default function Location() {
             src={SITE.shopImage}
             alt={`Fachada da ${SITE.name}`}
             sizes="(min-width: 1024px) 560px, 100vw"
-            className="object-cover"
+            className="object-cover object-[50%_62%]"
           />
         </div>
 
